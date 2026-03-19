@@ -1,1 +1,4 @@
-/* Cleared Vite default styles */
+body {
+  margin: 0;
+  background: #FAF9F7;
+}
