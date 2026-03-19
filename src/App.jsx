@@ -74,7 +74,7 @@ const GlobalCSS = () => (
 );
 
 /* ── Player detail modal ──────────────────────────────── */
-function PlayerModal({ player: p, onClose }) {
+function PlayerModal({ player: p, onClose, onDelete }) {
   if (!p) return null;
   const Field = ({ label, val }) =>
     val && String(val).trim() && val !== "N/A" && val !== "NA" ? (
@@ -122,7 +122,15 @@ function PlayerModal({ player: p, onClose }) {
               <div style={{ fontSize: 13, lineHeight: 1.6, color: C.textMid, whiteSpace: "pre-wrap" }}>{p.bio}</div>
             </div>
           )}
-          <div style={{ marginTop: 16, fontSize: 11, color: C.textFaint }}>Registered {fmt(p.created_at)}</div>
+          <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, color: C.textFaint }}>Registered {fmt(p.created_at)}</div>
+            <button
+              onClick={() => { if (window.confirm(`Delete ${p.first_name} ${p.last_name}? This cannot be undone.`)) onDelete(p.id, "player"); }}
+              style={{ background: "none", border: `1px solid ${C.red}30`, borderRadius: 6, padding: "6px 14px", fontSize: 11, fontWeight: 700, color: C.red, cursor: "pointer", letterSpacing: "0.04em", textTransform: "uppercase" }}
+            >
+              Delete Player
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -130,7 +138,7 @@ function PlayerModal({ player: p, onClose }) {
 }
 
 /* ── Team detail modal ────────────────────────────────── */
-function TeamModal({ team: t, players, onClose }) {
+function TeamModal({ team: t, players, onClose, onDelete }) {
   if (!t) return null;
   const roster = players.filter((p) => p.team_id === t.id);
   return (
@@ -193,7 +201,15 @@ function TeamModal({ team: t, players, onClose }) {
               <a href={t.proof_of_payment_url} target="_blank" rel="noreferrer" style={{ fontSize: 13, color: C.red }}>View document</a>
             </div>
           )}
-          <div style={{ marginTop: 16, fontSize: 11, color: C.textFaint }}>Registered {fmt(t.created_at)} &middot; Status: {t.status}</div>
+          <div style={{ marginTop: 16, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            <div style={{ fontSize: 11, color: C.textFaint }}>Registered {fmt(t.created_at)} &middot; Status: {t.status}</div>
+            <button
+              onClick={() => { if (window.confirm(`Delete team "${t.team_name}"? This cannot be undone.`)) onDelete(t.id, "team"); }}
+              style={{ background: "none", border: `1px solid ${C.red}30`, borderRadius: 6, padding: "6px 14px", fontSize: 11, fontWeight: 700, color: C.red, cursor: "pointer", letterSpacing: "0.04em", textTransform: "uppercase" }}
+            >
+              Delete Team
+            </button>
+          </div>
         </div>
       </div>
     </div>
@@ -251,6 +267,18 @@ export default function App() {
       clearInterval(pollRef.current);
     };
   }, [fetchAll]);
+
+  const handleDelete = async (id, type) => {
+    const table = type === "player" ? "afs_players" : "afs_teams";
+    const { error } = await supabase.from(table).delete().eq("id", id);
+    if (error) {
+      alert(`Delete failed: ${error.message}`);
+      return;
+    }
+    setSelectedPlayer(null);
+    setSelectedTeam(null);
+    fetchAll();
+  };
 
   const filtered = (tab === "players" ? players : teams).filter((r) => {
     if (!search) return true;
@@ -435,8 +463,8 @@ export default function App() {
       </div>
 
       {/* ── Modals ──────────────────────────── */}
-      {selectedPlayer && <PlayerModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} />}
-      {selectedTeam && <TeamModal team={selectedTeam} players={players} onClose={() => setSelectedTeam(null)} />}
+      {selectedPlayer && <PlayerModal player={selectedPlayer} onClose={() => setSelectedPlayer(null)} onDelete={handleDelete} />}
+      {selectedTeam && <TeamModal team={selectedTeam} players={players} onClose={() => setSelectedTeam(null)} onDelete={handleDelete} />}
     </div>
   );
 }
