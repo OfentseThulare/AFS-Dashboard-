@@ -1,0 +1,3 @@
+# Supabase CLI scratch dir (project ref, pooler URL, version cache)
+.temp/
+.branches/
